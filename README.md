@@ -12,7 +12,7 @@ The testrunner code is usually used from outside its directory.  Please check ou
 
 before using this repo for examples and documentation on how to use the testrunner code.
 
-It is unlikely that you should have to modify the scripts in this repor to run your own evaluation.  But if you do modify these scripts then perhaps, the testrunner repo should be updated.
+It is unlikely that you should have to modify the scripts in this repo to run your own evaluation.  But if you do modify these scripts then perhaps, the testrunner repo should be updated.
 
 ## Acknowledgements
 

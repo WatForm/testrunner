@@ -303,6 +303,7 @@ class TestRunner:
                         start = monotonic_timer()  # Start timing
                         result = subprocess.run(formatted_command, capture_output=True, text=True, timeout=self.timeout)  # Run the command
                         time_elapsed: float = monotonic_timer() - start  # End timing
+                        # log stdout and stderr to log file
                         if (show_output):
                             logging.debug(result.stdout)
                             logging.debug(result.stderr)
