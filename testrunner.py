@@ -421,7 +421,7 @@ class CSVTestRunner(TestRunner):
             for any additional iterations after it times out."""
         if (self.write_header and skip == 0 and not force_skip_header) or force_write_header:
             self.csv_writer.writeheader()
-        super().run(iterations, skip, retry_after_timeout=retry_after_timeout,showoutput=false)
+        super().run(iterations, skip, retry_after_timeout=retry_after_timeout,show_output=False)
     
     def handle_timeout(self, options_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
         """Gathers fields from the function provided in the constructor for timeouts.
