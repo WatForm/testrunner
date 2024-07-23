@@ -102,7 +102,7 @@ class Option:
         if type(option_values) != list:
             option_values = list(option_values)
         if len(option_values) == 0:
-            raise ValueError("Cannot have no option values! In option " + self.opt_name)
+            raise ValueError(f"Cannot have no option values! In option '{self.opt_name}'")
         self.option_values: List[OptionInfo] = option_values
 
     def get_option_values(self) -> List[OptionValue]:
@@ -124,13 +124,28 @@ class Option:
 
 
 class FromFileOption(Option):
-    """Creates options where the value is each line of the given file."""
+    """Creates options where the value is each line of the given file.
+    
+    If `strip_whitespace` is True, leading and trailing whitespace is stripped from each value.
+    If `strip_whitespace` is False, trailing newlines are still removed."""
 
-    def __init__(self, opt_name: str, filename):
-        values = []
-        with open(filename, 'r') as f:
-            values = f.readlines()
-        values = list(map(lambda x: x.strip(), values))
+    def __init__(self, opt_name: str, filename, strip_whitespace: bool = True):
+        values: list[str] = []
+        try:
+            with open(filename, 'r') as f:
+                values = f.readlines()  # Produce a list of lines in the file
+        except (FileNotFoundError, IOError)  as e:
+            e.add_note(f"Above error occurred while trying to get values for option {opt_name}.")
+            raise
+        
+        if strip_whitespace:
+            # Remove all leading and trailing whitespace
+            values = list(map(lambda x: x.strip(), values))
+        else:
+            # Remove trailing newline only
+            values = list(map(lambda x: x[:-1] if x[-1]=="\n" else x, values))
+        
+        
         super().__init__(opt_name, values)
 
 
@@ -335,7 +350,7 @@ class TestRunner:
                 flat[key] = value
         return flat
 
-    def handle_timeout(self, options_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
+    def handle_timeout(self, option_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
         """Absract method for what to do when a command times out."""
         pass
 
@@ -420,25 +435,43 @@ class CSVTestRunner(TestRunner):
         If `retry_after_timeout` is false, a command will not be run on the same set of option values
             for any additional iterations after it times out."""
         if (self.write_header and skip == 0 and not force_skip_header) or force_write_header:
-            self.csv_writer.writeheader()
+            try:
+                self.csv_writer.writeheader()
+            except ValueError as e:
+                e.add_note("Note: If you see an error about a file being closed, make sure you haven't closed the TestRunner's output file!")
+                raise
         super().run(iterations, skip, retry_after_timeout=retry_after_timeout,show_output=False)
     
-    def handle_timeout(self, options_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
+    def _write_row(self, rowdict: Mapping[str, Any]):
+        """Writes a row to the csv file, then flushes the output file.
+        Also handles error messages.
+        `rowdict` maps column names to the values to be recorded."""
+        try:
+            self.csv_writer.writerow(rowdict)
+        except ValueError as e:
+                e.add_note("Note: If you see an error about a file being closed, make sure you haven't closed the TestRunner's output file!")
+                raise
+        self.output_file.flush()
+    
+    def handle_timeout(self, option_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
         """Gathers fields from the function provided in the constructor for timeouts.
         Then, writes the results to a new row in the csv file."""
-        result_fields = self.fields_from_timeout(options_values, timeout)
-        data = options_values.copy()
-        data.update(result_fields)
-        self.csv_writer.writerow(data)
-        self.output_file.flush()
+        # Get the results from the user supplied function
+        input_values = option_values.copy()
+        result_fields = self.fields_from_timeout(input_values, timeout)
+        # Combine the inputs and results, allowing result_fields to override input values if desired
+        all_values = input_values | result_fields
+        # Write the output
+        self._write_row(all_values)
+        
         
     def handle_result(self, option_values: OptionDict, result: subprocess.CompletedProcess, time_elapsed: float) -> None:
         """Gathers fields from the function provided in the constructor for non-timeout results.
         Then, writes the results to a new row in the csv file."""
         input_values = option_values.copy()
         result_fields = self.fields_from_result(input_values, result, time_elapsed)
-        all_values = input_values
-        all_values |= result_fields
-        self.csv_writer.writerow(all_values)
-        self.output_file.flush()
+        # Combine the inputs and results, allowing result_fields to override input values if desired
+        all_values = input_values | result_fields
+        # Write the output
+        self._write_row(all_values)
         
