@@ -257,7 +257,7 @@ class TestRunner:
         """Calculates the number of commands that will be run."""
         return functools.reduce(lambda x, y: x * len(y), self.dynamic_options, 1)
 
-    def run(self, iterations: int = 1, skip: int = 0, retry_after_timeout=False):
+    def run(self, iterations: int = 1, skip: int = 0, retry_after_timeout=False, show_output=True):
         """
         Runs the given command over all the options `iterations` times.
         The first `skip` executions are skipped. `skip` counts command executions, not commands themselves.
@@ -303,7 +303,9 @@ class TestRunner:
                         start = monotonic_timer()  # Start timing
                         result = subprocess.run(formatted_command, capture_output=True, text=True, timeout=self.timeout)  # Run the command
                         time_elapsed: float = monotonic_timer() - start  # End timing
-
+                        if (show_output):
+                            logging.debug(result.stdout)
+                            logging.debug(result.stderr)
                         logging.debug(f'Returned with code {result.returncode} in {time_elapsed:.4f} seconds')
 
                         # Handle a non-timeout run of the command
@@ -418,7 +420,7 @@ class CSVTestRunner(TestRunner):
             for any additional iterations after it times out."""
         if (self.write_header and skip == 0 and not force_skip_header) or force_write_header:
             self.csv_writer.writeheader()
-        super().run(iterations, skip, retry_after_timeout=retry_after_timeout)
+        super().run(iterations, skip, retry_after_timeout=retry_after_timeout,showoutput=false)
     
     def handle_timeout(self, options_values: OptionDict, timeout: subprocess.TimeoutExpired) -> None:
         """Gathers fields from the function provided in the constructor for timeouts.
