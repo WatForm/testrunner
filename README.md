@@ -6,9 +6,11 @@ This repo contains some simple scripts to run commands at the CLI with options f
 
 ## Simple Example
 
-The testrunner code is usually used from outside its directory.  Please see its sibling github repo:
-`git clone https://github.com/WatForm/example_using_testrunner.git`
-for examples and documentation on how to use the testrunner code.
+The testrunner code is usually used from outside its directory.  Please check out its sibling github repo:
+
+`git clone https://github.com/WatForm/example-using-testrunner.git`
+
+before using this repo for examples and documentation on how to use the testrunner code.
 
 It is unlikely that you should have to modify the scripts in this repor to run your own evaluation.  But if you do modify these scripts then perhaps, the testrunner repo should be updated.
 
