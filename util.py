@@ -74,12 +74,12 @@ def now_string() -> str:
     return now.strftime("%Y-%m-%d-%H-%M-%S")
 
 
-def setup_logging_default():
-    logging.basicConfig(filename=f'log-{now_string()}.txt', level=logging.INFO)
+def setup_logging_default(suffix):
+    logging.basicConfig(filename=f'{now_string()}{suffix}-log.txt', level=logging.INFO)
 
 
-def setup_logging_debug():
-    logging.basicConfig(filename=f'log-{now_string()}.txt', level=logging.DEBUG)
+def setup_logging_debug(suffix):
+    logging.basicConfig(filename=f'{now_string()}{suffix}-log.txt', level=logging.DEBUG)
 
 
 def flatten(lst):
@@ -116,14 +116,18 @@ def wait_for_kill():
     # hasn't been cleaned up yet. We increased it to 30 seconds to avoid that.
     time.sleep(30)  # seconds
 
-# Kill only lingering Z3 processes
-def kill_z3():
-    for proc in psutil.process_iter():
-        if 'z3' in proc.name().lower():
-            # We found a z3 process
-            logging.warn('Z3 is still running... killing')
-            kill_process(proc,proc.name())
-            wait_for_kill()
+# Kill only lingering solver processes
+def kill_solvers():
+    flag = True
+    while flag:
+        for proc in psutil.process_iter():
+         flag = False
+         if 'cvc5' in proc.name().lower() or 'z3' in proc.name().lower():
+             # We found a z3/cvc5 process
+             logging.warn(proc.name().lower() + ' is still running... killing')
+             kill_process(proc,proc.name())
+             wait_for_kill()
+             flag = True
 
 def check_process_running(process_name):
     """
