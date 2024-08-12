@@ -75,11 +75,11 @@ def now_string() -> str:
 
 
 
-def setup_logging_default(filename_suffix):
+def setup_logging_default(filename_suffix:str=""):
     logging.basicConfig(filename=f'{now_string()}{filename_suffix}-log.txt', level=logging.INFO)
 
 
-def setup_logging_debug(filename_suffix):
+def setup_logging_debug(filename_suffix:str=""):
     logging.basicConfig(filename=f'{now_string()}{filename_suffix}-log.txt', level=logging.DEBUG)
 
 def flatten(lst):
