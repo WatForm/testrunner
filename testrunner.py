@@ -304,8 +304,10 @@ class TestRunner:
                 formatted_command = self.format_command(self.command, option_values)
 
                 command_count += 1
-                logging.info(f"Command #{command_count}: {shlex.join(formatted_command)}")
-                logging.debug('Dynamic values: ' + str(dynamic_option_values))
+                if command_count + iterations > skip:
+                    # Only log if we don't entirely skip this section
+                    logging.info(f"Command #{command_count}: {shlex.join(formatted_command)}")
+                    logging.debug('Dynamic values: ' + str(dynamic_option_values))
                 for iteration_number in range(iterations):
                     iteration_count += 1
                     # Skip commands
