@@ -34,7 +34,7 @@ class Satisfiablity(str, Enum):
 
 
 def satisfiability_of_output(output: str) -> Satisfiablity:
-    # TODO liklely faster to do 'sat' in output.lower() or something
+    # TODO likely faster to do 'sat' in output.lower() or something
     if re.search('Unsat', output):
         return Satisfiablity.UNSAT
     elif re.search('Sat', output):
