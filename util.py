@@ -123,12 +123,19 @@ def kill_solvers():
     while flag:
         for proc in psutil.process_iter():
          flag = False
-         if 'cvc5' in proc.name().lower() or 'z3' in proc.name().lower():
-             # We found a z3/cvc5 process
-             logging.warn(proc.name().lower() + ' is still running... killing')
-             kill_process(proc,proc.name())
-             wait_for_kill()
-             flag = True
+         try:
+             if 'cvc5' in proc.name().lower() or 'z3' in proc.name().lower():
+                 # We found a z3/cvc5 process
+                 logging.warn(proc.name().lower() + ' is still running... killing')
+                 kill_process(proc,proc.name())
+                 wait_for_kill()
+                 flag = True
+         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            # every now and then the bit of time between psutil.process_iter()
+            # and proc.name() allows a process to die and we get an exception
+            # on proc.name()
+            # if the process has died, great! and let's move on
+            pass
 
 def check_process_running(process_name):
     """
