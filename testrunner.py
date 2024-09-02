@@ -356,7 +356,8 @@ class TestRunner:
             sudo swapon -a
         """
         if self.should_clear_cache:
-            subprocess.run(["clear_cache"])
+            logging.info("Clearing cache")
+            subprocess.run(["clear_cache"], stdout=subprocess.DEVNULL)
 
     @staticmethod
     def _flatten_options(option_values: OptionDict) -> OptionDict:
