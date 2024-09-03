@@ -229,7 +229,7 @@ class TestRunner:
     """Abstract class to be overwritten. Runs commands for the cross product of each value in options."""
     # timeout is always a required value for a testrunner?
     def __init__(self, command: Command, *options: Option, timeout: int,
-                 output_file: typing.TextIO = None):
+                 output_file: typing.TextIO = None, clear_cache: bool = False):
         # Command should be formed for `Popen` but can have {kwarg} style formatting in place
         self.command = command
         # separate static and dynamic options
@@ -241,6 +241,7 @@ class TestRunner:
             self.static_option_values['timeout'] = timeout
         self.timeout = timeout
         self.output_file = output_file if output_file else sys.stdout
+        self.should_clear_cache = clear_cache
 
     @property
     def dynamic_option_names(self):
@@ -317,6 +318,7 @@ class TestRunner:
                         logging.info('Done skipping!')
 
                     try:
+                        self.clear_cache()
                         start = monotonic_timer()  # Start timing
                         result = subprocess.run(formatted_command, capture_output=True, text=True, timeout=self.timeout)  # Run the command
                         time_elapsed: float = monotonic_timer() - start  # End timing
@@ -341,6 +343,21 @@ class TestRunner:
                              exc_info=True)
             raise
         logging.info(f"Done at {now_string()}")
+
+    def clear_cache(self):
+        """Clear any relevant system caches, if supported.
+
+        To use this feature, the following script should be installed in a script named "clear_cache" on the PATH and given
+        superuser permissions:
+            #!/bin/bash
+            sync
+            echo 3 | sudo tee /proc/sys/vm/drop_caches
+            sudo swapoff -a
+            sudo swapon -a
+        """
+        if self.should_clear_cache:
+            logging.info("Clearing cache")
+            subprocess.run(["clear_cache"], stdout=subprocess.DEVNULL)
 
     @staticmethod
     def _flatten_options(option_values: OptionDict) -> OptionDict:
@@ -373,6 +390,7 @@ class CSVTestRunner(TestRunner):
     """Runs the cross product of provided options on a command and records output in a csv file."""
     def __init__(self, command: Command, *options: Option, timeout: int,
                  output_file: typing.TextIO = None,
+                 clear_cache: bool = True,
                  result_fields: Optional[List[str]] = [],
                  fields_from_timeout: Callable[[OptionDict, subprocess.TimeoutExpired], OptionDict],
                  fields_from_result: Callable[[OptionDict, subprocess.CompletedProcess, float], OptionDict],
@@ -393,7 +411,7 @@ class CSVTestRunner(TestRunner):
         If `write_header` is True the header to the csvfile will be written when not skipping the first line.
             If skipping the first line, `run` can be called with `force_write_header` to write the header anyway.
         """
-        super().__init__(command, *options, timeout=timeout, output_file=output_file)
+        super().__init__(command, *options, timeout=timeout, output_file=output_file, clear_cache=clear_cache)
         self._result_fields: List[str] = result_fields
         # Default to including all fields
         if ignore_fields is None:
